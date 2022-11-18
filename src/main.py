@@ -44,7 +44,12 @@ def messages_exchange(update: Updater, context: CallbackContext) -> None:
     chat_id = fetch_chat_id(update)
     if chat_id > 0:
         SETTINGS['messages'][str(update.message.message_id + 1)] = chat_id
-        gcid = int(config('default_channel'))
+        try:
+            gcid = int(config('default_channel'))
+        except ValueError:
+            logging.warning('Please set default channel in .env')
+            return 
+            
         if str(chat_id) in SETTINGS['users']:
             gcid = int(SETTINGS['users'][str(chat_id)])
 
@@ -52,7 +57,12 @@ def messages_exchange(update: Updater, context: CallbackContext) -> None:
         logging.debug(f'message_repost: forward from {chat_id} to {gcid}, message {update.message.message_id}')
 
     if chat_id < 0:
-        reply_id = int(update.message.reply_to_message.message_id)
+        try:
+            reply_id = int(update.message.reply_to_message.message_id)
+        except AttributeError:
+            logging.debug('Nobody reply.')
+            return 
+            
         if str(reply_id) in SETTINGS['messages']:
             context.bot.copy_message(SETTINGS['messages'][str(reply_id)], chat_id, int(update.message.message_id))
             logging.debug(f'message_repost: reply from {chat_id} for {SETTINGS["messages"][str(reply_id)]}, message {update.message.message_id}')
